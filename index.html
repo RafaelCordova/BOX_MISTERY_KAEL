@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Caja Misteriosa</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background: #fceabb;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    text-align: center;
+  }
+
+  header {
+    padding: 20px;
+  }
+
+  input, button {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+  }
+
+  button {
+    background-color: #d62828;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #ba181b;
+  }
+
+  .contenedor-caja {
+    margin-top: 50px;
+    position: relative;
+    display: inline-block;
+  }
+
+  .caja {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    background: #f77f00;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: all 0.5s ease;
+  }
+
+  .tapa {
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    top: 0;
+    left: 0;
+    background: #d62828;
+    border-radius: 15px 15px 0 0;
+    transition: all 0.7s ease;
+    transform-origin: top left;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    color: white;
+  }
+
+  #premioMostrar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 26px;
+    color: white;
+    font-weight: bold;
+    opacity: 0;
+    white-space: nowrap;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .confeti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: #e63946;
+    animation: caer 3s linear forwards;
+    border-radius: 50%;
+    z-index: 9999;
+  }
+
+  @keyframes caer {
+    to {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes salirDeCaja {
+    0% {
+      transform: translate(-50%, -200%);
+      opacity: 0;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.3);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, 0%);
+      opacity: 1;
+    }
+  }
+
+  .fondo-oscuro {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 9990;
+  }
+
+  .primer-plano {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1.3);
+    z-index: 9999;
+  }
+
+  .entrada-premio {
+    position: fixed;
+    background: #ffffff;
+    color: #000;
+    padding: 8px 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    font-size: 18px;
+    z-index: 9999;
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.8s ease;
+    pointer-events: none;
+  }
+
+  .modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+  }
+
+  .modal-contenido {
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 300px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  }
+
+  .modal-contenido h2 {
+    margin-top: 0;
+    color: #d62828;
+  }
+
+  .modal-contenido ul {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    text-align: left;
+  }
+
+  .modal-contenido li {
+    margin: 5px 0;
+    font-size: 18px;
+  }
+
+  .modal-contenido button {
+    background: #d62828;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎁 Caja Misteriosa de KaelGGLive 🎁</h1>
+
+<header>
+  <input type="text" id="premioInput" placeholder="Ingresa un premio">
+  <button onclick="agregarPremio()" id="btnAgregar">Agregar Premio</button>
+  <button onclick="cerrarCaja()" id="btnCerrar">Cerrar Caja</button>
+  <button onclick="verPremios()" id="btnVerPremios">Ver Premios</button>
+</header>
+
+<div class="contenedor-caja" id="contenedorCaja">
+  <div class="caja" id="cajaMisteriosa" onclick="abrirCaja()">
+    <div class="tapa">🎀</div>
+    <div id="premioMostrar"></div>
+  </div>
+  <img id="imagenCaja" src="kael.png" alt="Imagen Premio" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+
+</div>
+
+<div id="fondoOscuro" style="display:none;" class="fondo-oscuro"></div>
+
+<script>
+  let premios = [];
+  let cajaCerrada = false;
+
+  function agregarPremio() {
+    const premioInput = document.getElementById('premioInput');
+    const premio = premioInput.value.trim();
+    if (premio) {
+      premios.push(premio);
+
+      const anim = document.createElement('div');
+      anim.className = 'entrada-premio';
+      anim.textContent = premio;
+      document.body.appendChild(anim);
+
+      const inputRect = premioInput.getBoundingClientRect();
+      anim.style.left = (inputRect.left + inputRect.width / 2 - anim.offsetWidth / 2) + 'px';
+      anim.style.top = (inputRect.top + inputRect.height / 2 - anim.offsetHeight / 2) + 'px';
+      void anim.offsetWidth;
+
+      const cajaRect = document.getElementById('cajaMisteriosa').getBoundingClientRect();
+      anim.style.left = (cajaRect.left + cajaRect.width / 2 - anim.offsetWidth / 2) + 'px';
+      anim.style.top = (cajaRect.top + cajaRect.height / 2 - anim.offsetHeight / 2) + 'px';
+      anim.style.opacity = '0';
+      anim.style.transform = 'scale(0.2)';
+
+      setTimeout(() => {
+        anim.remove();
+      }, 800);
+
+      premioInput.value = '';
+    }
+  }
+
+  function cerrarCaja() {
+    if (premios.length === 0) {
+      alert("Agrega al menos un premio antes de cerrar la caja.");
+      return;
+    }
+    cajaCerrada = true;
+    document.getElementById('btnCerrar').disabled = true;
+    document.getElementById('premioInput').disabled = true;
+    document.getElementById('btnAgregar').disabled = true;
+
+    const premioMostrar = document.getElementById('premioMostrar');
+    premioMostrar.style.opacity = '1';
+    premioMostrar.style.fontSize = '18px';
+    premioMostrar.style.animation = 'none';
+    premioMostrar.textContent = '📦 CAJA CERRADA 📦';
+
+    // Establecer la posición absoluta dentro de la caja
+    premioMostrar.style.position = 'absolute';
+    premioMostrar.style.top = '50%';  // Esto posiciona el mensaje en la mitad de la caja
+    premioMostrar.style.left = '50%'; // Centra el mensaje horizontalmente
+    premioMostrar.style.transform = 'translate(-50%, 90%)';  // Mueve el mensaje más abajo
+
+
+    alert("🎁 ¡La caja está lista! Haz click sobre ella para revelar tu premio.");
+  }
+
+  function abrirCaja() {
+    if (!cajaCerrada) return;
+  
+    const contenedor = document.getElementById('contenedorCaja');
+    const caja = document.getElementById('cajaMisteriosa');
+    const tapa = caja.querySelector('.tapa');
+    const fondoOscuro = document.getElementById('fondoOscuro');
+    const premioMostrar = document.getElementById('premioMostrar');
+  
+    // Mostrar fondo oscuro
+    fondoOscuro.style.display = 'block';
+  
+    // Primer plano
+    contenedor.classList.add('primer-plano');
+  
+    // Espera 2s antes de abrir
+    setTimeout(() => {
+      tapa.style.transform = 'rotateY(-120deg) rotateZ(-120deg)';
+  
+      // Confeti
+      lanzarConfeti();
+  
+      // Elegir premio al azar
+      const premio = premios[Math.floor(Math.random() * premios.length)];
+  
+      // Mostrar premio después de 1s
+      setTimeout(() => {
+        // Establecer el mensaje del premio
+        premioMostrar.textContent = `🎉 Felicidades abejorro, ganaste: ${premio} 🎉`;
+        premioMostrar.style.animation = 'salirDeCaja 1s ease forwards';
+  
+        // Posicionamos el mensaje debajo de la caja
+        premioMostrar.style.position = 'absolute';
+        premioMostrar.style.top = '120%'; // Coloca el mensaje debajo de la caja
+        premioMostrar.style.left = '50%';
+        premioMostrar.style.transform = 'translateX(-50%)'; // Centra el mensaje horizontalmente
+        premioMostrar.style.fontSize = '32px'; // Aumenta el tamaño del texto  
+  
+        // Mostrar la imagen dentro de la caja
+        const imagenCaja = document.getElementById('imagenCaja');
+        imagenCaja.style.display = 'block';  // Hacer visible la imagen
+        imagenCaja.style.position = 'absolute';
+        imagenCaja.style.top = '0';
+        imagenCaja.style.left = '0';
+        imagenCaja.style.transform = 'scale(1)'; // Ajustar el tamaño de la imagen si es necesario
+        imagenCaja.style.transition = 'all 0.5s ease'; // Añadir transición para suavizar la aparición de la imagen
+  
+        // Desactivar clics
+        caja.onclick = null;
+      }, 1000);
+  
+    }, 2000);
+  }
+  
+
+  function lanzarConfeti() {
+    for (let i = 0; i < 50; i++) {
+      const confeti = document.createElement('div');
+      confeti.className = 'confeti';
+      confeti.style.left = Math.random() * 100 + 'vw';
+      confeti.style.background = `hsl(${Math.random() * 360}, 100%, 60%)`;
+      document.body.appendChild(confeti);
+      setTimeout(() => confeti.remove(), 3000);
+    }
+  }
+
+  function verPremios() {
+    if (premios.length === 0) {
+      alert("Aún no hay premios en la caja.");
+      return;
+    }
+
+    const listaPremios = document.getElementById('listaPremios');
+    listaPremios.innerHTML = '';
+
+    premios.forEach(premio => {
+      const li = document.createElement('li');
+      li.textContent = premio;
+      listaPremios.appendChild(li);
+    });
+
+    document.getElementById('modalPremios').style.display = 'flex';
+  }
+
+  function cerrarModal() {
+    document.getElementById('modalPremios').style.display = 'none';
+  }
+</script>
+
+<div id="modalPremios" style="display:none;" class="modal">
+  <div class="modal-contenido">
+    <h2>🎁 Premios en la Caja 🎁</h2>
+    <ul id="listaPremios"></ul>
+    <button onclick="cerrarModal()">Cerrar</button>
+  </div>
+</div>
+
+</body>
+</html>
